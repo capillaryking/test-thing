@@ -204,7 +204,7 @@ function startTest() {
     if (!checkIfValidTest(test)) return
 
     if (test.random) {
-        test.questions
+        shuffle(test.questions)
     }
 
     let questionObjects = []
