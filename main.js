@@ -50,7 +50,6 @@ function generateQuestionDiv(question, questionNumber, totalQuestions) {
     div.appendChild(ask)
     if (question.type == "multiple-choice") {
         let selected
-        shuffle(question.correct)
 
         object.check = function() {
             let correct = (selected === question.correct)
