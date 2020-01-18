@@ -50,6 +50,8 @@ function generateQuestionDiv(question, questionNumber, totalQuestions) {
     div.appendChild(ask)
     if (question.type == "multiple-choice") {
         let selected
+        shuffle(question.correct)
+
         object.check = function() {
             let correct = (selected === question.correct)
             for (child of div.childNodes) {
@@ -77,7 +79,7 @@ function generateQuestionDiv(question, questionNumber, totalQuestions) {
             let input = document.createElement("input")
             input.className = "form-check-input"
             input.name = "choiceRadios" + questionNumber
-            input.id = "thisIsMyChoice" + choice + questionNumber
+            input.id = "thisIsMyChoice" + choice + "," + questionNumber
             input.type = "radio"
             
             let label = document.createElement("label")
@@ -110,8 +112,6 @@ function generateQuestionDiv(question, questionNumber, totalQuestions) {
                 }
             }
 
-            
-
             if (!correct) {
                 let missing = question.correct.filter(x => (!notMissing[x])).map(x => "'" + x + "'")
                 let mapped = question.correct.map(x => "'" + x + "'")
@@ -132,6 +132,61 @@ function generateQuestionDiv(question, questionNumber, totalQuestions) {
             
             div.appendChild(input)
         }
+    } else if (question.type == "true-false") {
+        let chosen = true
+
+        let buttonGroup = document.createElement("div")
+        buttonGroup.className = "btn-group btn-group-toggle"
+        buttonGroup.style.marginBottom = "5px"
+        buttonGroup.setAttribute("data-toggle", "buttons")
+
+        let trueLabel = document.createElement("label")
+        trueLabel.className = "btn btn-primary active"
+        trueLabel.appendChild(document.createTextNode("true"))
+        let trueButton = document.createElement("input")
+        trueButton.type = "radio"
+        trueButton.name = "trueOrFalse" + questionNumber
+        trueButton.id = "trueButton" + questionNumber
+        trueButton.autocomplete = "off"
+        trueButton.checked = true
+        trueButton.appendChild(document.createTextNode("true"))
+
+        let falseLabel = document.createElement("label")
+        falseLabel.className = "btn btn-primary"
+        falseLabel.appendChild(document.createTextNode("false"))
+        let falseButton = document.createElement("input")
+        falseButton.type = "radio"
+        falseButton.name = "trueOrFalse" + questionNumber
+        falseButton.id = "falseButton" + questionNumber
+        falseButton.autocomplete = "off"
+        trueButton.addEventListener("click", () => {
+            chosen = true
+        })
+
+        falseButton.addEventListener("click", () => {
+            chosen = false
+        })
+
+        buttonGroup.appendChild(trueLabel)
+        buttonGroup.appendChild(falseLabel)
+        trueLabel.appendChild(trueButton)
+        falseLabel.appendChild(falseButton)
+        div.appendChild(buttonGroup)
+
+        object.check = function() {
+            let correct = (chosen === question.correct)
+            falseButton.disabled = true
+            trueButton.disabled = true
+
+            if (!correct) {
+                div.insertBefore(makeAlert("danger", "You got it wrong! The correct answer was " + question.correct.toString()), ask)
+            } else {
+                div.insertBefore(makeAlert("success", "You got it correct!"), ask) 
+            }
+
+            return correct
+        }
+
     }
 
     return object
@@ -150,7 +205,7 @@ function startTest() {
     if (!checkIfValidTest(test)) return
 
     if (test.random) {
-        test.questions = shuffle(test.questions)
+        test.questions
     }
 
     let questionObjects = []
@@ -180,11 +235,16 @@ function startTest() {
             body.removeChild(questionObjects[currentQuestion].div)
             nextQuestion.style.display = "none"
             prevQuestion.style.display = "none"
-
+            
+            let correctAnswers = 0
             for (object of questionObjects) {
-                object.check()
+                let result = object.check()
+                if (result) {correctAnswers++}
                 addDiv(object.div)
             }
+
+            let alert = makeAlert("info", "You got " + correctAnswers + " out of " + test.questions.length + " questions correct.")
+            body.insertBefore(alert, body.firstChild)
         } else {
             body.removeChild(questionObjects[currentQuestion].div)
             currentQuestion += 1
